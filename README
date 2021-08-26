@@ -1,0 +1,42 @@
+This repository contains the code needed to reproduce the analysis of the article 
+Zaoli, S. and Grilli J., "A macroecological description of alternative stable states reproduces intra- andinter-host variability of gut microbiome", Science Advances (2021)
+
+It contains the following files:
+
+- abd_all_clean.mat: A matlab data file containing:
+   * individuals: the list of time-series, i.e. the 10 individuals of BIO-ML in alphabetical order, M3, F4, A (pre-travel), B(pre-Salmonella), A(post-travel), B(post-Salmonella)
+   * OTU_MP, OTU_BIOML, OTU_David: lists with the Greengenes ids of OTUs present in each dataset
+   * abd: A matlab cell array containing the OTU abundances for each of the 16 time series, in the order specified in 'individuals'. In each array, rows correspond to samples.  
+          The first column contains the sampling day (number of days from the start of the experiment), the following columns contain the counts for each OTU, in the order of the OTU id files of the
+          corresponding dataset. The last columnn contains the unassigned counts. 
+          OTU counts were obtained processing the raw data from the original experiments with Qiime, as described in section 1 of the Supplementary Information of the paper. 
+          
+  We cleaned the data as follows: 
+  * Removed samples with less than 10^4 reads or with more than half of the sequences non recognized
+  * Split the time-series of individual A to remove travel abroad: first time-series until day 70, second time-series starting from day 123
+  * Split the time-series of individual B to remove Salmonella infection: first time-series until day 149, second time-series starting from day 161
+  * Removed days indicated as potentially mislabelled in the original studies ( days 51, 168, 234, 367 for M3, day 0 for F4, days 75, 76 and from 258 to 270 for A and days 129 and 130 for B.) or, for the BIOML dataset where no indications are given,  that we identified as such with the method used in David et al. (2014)  (23rd sample for 'ae' and 19th sample for 'an'). 
+  * When two samples where present for the same day, we keep only the first
+
+
+- Compute_Phi.m: script to compute \Phi_i(T) and \Phi_i^{a,b}
+
+- compute_phi_i.m, equalize.m : functions used in the script Compute_Phi.m
+
+- Figure1.m: script that produces Fig.1
+
+- Figure2.m: script that produces Fig.2
+
+- ComputeD.m: script that computes the values of D+ and D-, needed to identify transistions in the value of the carrying capacity K
+
+- K_transitions_analysis.m: script that performs the analysis to identify transistions in the value of the carrying capacity K, and produces Figure S6,7 and 8
+
+- Figure3.m: script that produces Fig.3 and related supplementary figures
+
+- Correlation_analysis.m: script that computes the correlation of values of K and sigma etimated from the data, in time and across individuals, and produces figures S1 and S14
+
+- Kmodel.m: script that simulates abundance time-series according to the model introduced in section E of the paper, and performs anlayses on the simulated data. It produces figure 4 and related supplementary figures
+
+- corrData.mat, Infoloss_5days.mat, meanPhi_alldataset.mat, meanPhicross_alldataset2.mat, threshold_slope.mat, tval_all,threshoccup.mat: precomputed results of long computations, so that the scripts producing the figures can be run faster  
+
+

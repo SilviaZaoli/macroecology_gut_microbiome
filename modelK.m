@@ -1,4 +1,5 @@
 %This script simulates abundance time-series according to an SLM with carrying capacity K jumping, and performs anlayses on the simulated data
+% It produces figure 4 and related supplementary figures
 
 load('abd_all_clean.mat') %load empirical abundances
 %the variable 'abd' contains one array for each individual, in the
@@ -9,6 +10,8 @@ load('abd_all_clean.mat') %load empirical abundances
 %contains the unassigned counts. 
 
 %Estimation of K and sigma 
+
+thresh_occup=0.2;
 for i=1:16
    counts{i,1}=sum(abd{i,1}(:,2:end),2);   %total reads
    relabd{i,1}=abd{i,1}(:,2:end-1)./counts{i,1};   %relative abundance
@@ -18,12 +21,12 @@ for i=1:16
    K{i,1}=2*meanrelabd{i,1}./(2-sigma{i,1});
    K{i,1}(isnan(sigma{i,1}) & meanrelabd{i,1}==0)=0;
    occup{i,1}=sum(relabd{i,1}>0)./size(relabd{i,1},1);   %occupancy
-   id{i,1}=find(sigma{i,1}>0 & sigma{i,1}<Inf & occup{i,1}>0.2);   %OTUs to analyse
+   id{i,1}=find(sigma{i,1}>0 & sigma{i,1}<Inf & occup{i,1}>thresh_occup);   %OTUs to analyse
 end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Analysis for Fig. S?: var(xi) does not depend on K
+%Analysis for Fig. S?: var(zeta) does not depend on K
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %find species common to all BIOML individuals
 id_comm=intersect(id{1,1},id{2,1});
@@ -31,44 +34,34 @@ for i=3:10
    id_comm=intersect(id_comm, id{i,1});
 end
 
-%Compute \bar{K} for each OTU and the value of xi for that OTU in each
+%Compute \bar{K} for each OTU and the value of zeta for that OTU in each
 %individual
 Kbar=zeros(length(id_comm),1);
-xi=zeros(length(id_comm),10);
+zeta=zeros(length(id_comm),10);
 for i=1:length(id_comm)
     ks=[]; 
    for j=1:10
        ks=[ks, K{j,1}(id_comm(i))];
    end
     Kbar(i)=mean(ks); %mean K for each OTU across all individuals
-    xi(i,:)=ks/Kbar(i);
+    zeta(i,:)=ks/Kbar(i);
 end
 
-%Plot of values of xi for each OTU against \bar{K}
-figure
-for i=1:length(id_comm)
-plot(Kbar(i), xi(i,:),'ko')
-hold on 
-end
-set(gca, 'xscale','log')
-ylabel('\xi_i')
-xlabel('$\bar{K}$','interpreter','latex')
-
-%Fig. S?A: Plot of var(xi) for each OTU against \bar{K} (with its average in logarithmic bins)
-varxi=var(xi');
+%Fig. S4A: Plot of var(zeta) for each OTU against \bar{K} (with its average in logarithmic bins)
+varzeta=var(zeta');
 binedges=10.^[-5,-4,-3,-2,-1,0];
 for i=1:5
-   binmean(i)=mean(varxi(Kbar>binedges(i)& Kbar<binedges(i+1)));
+   binmean(i)=mean(varzeta(Kbar>binedges(i)& Kbar<binedges(i+1)));
 end
 
 figure
-plot(Kbar, varxi,'ok')
+plot(Kbar, varzeta,'ok')
 hold on
 for i=1:5
    plot(10^(log10(binedges(i))+(log10(binedges(i+1))-log10(binedges(i)))/2),binmean(i),'r.','Markersize',20) 
 end
 set(gca, 'xscale','log')
-ylabel('var(\xi_i)')
+ylabel('var(\zeta_i)')
 xlabel('$\bar{K}_i$','interpreter','latex')
 pbaspect([1.6 1 1])
 
@@ -80,8 +73,8 @@ N=10; %individuals
 M=10000; %OTUs (not all will be observed in all 10 individuals)
 barks=lognrnd(-12,3,M,1); %\bar{K} for each OTU
 
-m = 1; % mean of xi
-v = 5; % variance of xi
+m = 1; % mean of zeta
+v = 5; % variance of zeta
 mu = log((m^2)/sqrt(v+m^2));  %mean of underlying gaussian
 s = sqrt(log(v/(m^2)+1));     %variance of underlying gaussinan
 ks=barks.*(lognrnd(mu,s,M,10)); %values of K for each OTU in each individual
@@ -94,40 +87,30 @@ for i=1:M
 end
 
 %for the selected OTUs, we perform the same analysis performed on the data
-%(compute K, xi, var(xi)
+%(compute K, zetq, var(zeta)
 Kbar=zeros(length(id_obs),1); 
-xi=zeros(length(id_obs),10);
+zeta=zeros(length(id_obs),10);
 for i=1:length(id_obs)
     Kbar(i)=mean(ks(id_obs(i),:));
-    xi(i,:)=ks(id_obs(i),:)/Kbar(i);
+    zeta(i,:)=ks(id_obs(i),:)/Kbar(i);
 end
 
-%Plot of values of xi for each OTU against \bar{K}
-figure
-for i=1:length(id_comm)
-plot(Kbar(i), xi(i,:),'ko')
-hold on 
-end
-set(gca, 'xscale','log')
-ylabel('\xi_i')
-xlabel('$\bar{K}$','interpreter','latex')
-
-varxi=var(xi');
+varzeta=var(zeta');
 binedges=10.^[-6,-5,-4,-3,-2,-1,0];
 for i=1:6
-   binmean(i)=mean(varxi(Kbar>binedges(i)&Kbar<binedges(i+1)));
+   binmean(i)=mean(varzeta(Kbar>binedges(i)&Kbar<binedges(i+1)));
 end
 
-%Fig. S?B: Plot of var(xi) for each OTU against \bar{K} (with its average in logarithmic bins)
+%Fig. S4B: Plot of var(zeta) for each OTU against \bar{K} (with its average in logarithmic bins)
 
 figure
-plot(Kbar, varxi,'ok')
+plot(Kbar, varzeta,'ok')
 hold on
 for i=1:6
    plot(10^(log10(binedges(i))+(log10(binedges(i+1))-log10(binedges(i)))/2),binmean(i),'r.','Markersize',20) 
 end
 set(gca, 'xscale','log')
-ylabel('var(\xi_i)')
+ylabel('var(\zeta_i)')
 xlabel('$\bar{K}_i$','interpreter','latex')
 pbaspect([1.6 1 1])
 axis([10^-5 1 0 10])
@@ -135,13 +118,13 @@ axis([10^-5 1 0 10])
 clear barK
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Fig. 5A: Repeat the dissimilarity analysis of Figs 2C-D on the simulated data
+%Fig. 4A: Repeat the dissimilarity analysis of Figs 2C-D on the simulated data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Parameters for model of carrying capacity:
 
-m = 1; % mean of xi
-v = 2; % variance of xi
+m = 1; % mean of zeta
+v = 2; % variance of zeta
 mu = log((m^2)/sqrt(v+m^2)); %mean of underlying gaussian 
 s = sqrt(log(v/(m^2)+1));  %variance of underlying gaussian
 
@@ -167,8 +150,6 @@ barK{16,1}=K{16,1};
 %fraction of OTU for which I observe a jump in the observation time-window (from analysis in Fig. 3C)
 fracjump=[0.1, 0.23, 0.1, 0.15, 0.16,0.18, 0.3, 0.12, 0.25,0.22, 0.68, 0.5, 0.25, 0.52, 0.41,0.67]; 
 
-
-
 rng(1) %seed, for reproducibility
 
 % We simulate time-series
@@ -176,9 +157,7 @@ for i=1:16
     Ndays=abd{i,1}(end,1)-abd{i,1}(1,1); %time-window to simulate
     N=length(id{i,1}); %number of OTUs to simulate 
     ss=sigma{i,1}(id{i,1}); % the sigma of each OTU is taken as the empirical one
-    %kk=K{i,1}(id{i,1}); % barK for each OTU is taken as the empirical one
     kk=barK{i,1}(id{i,1}); % barK for each OTU 
-    
     
     parexp=-Ndays/log(1-fracjump(i)); %parameter of exponential distribution of jumping times such that the correct fraction of jumping OTUs is observed
     jumptimes1=exprnd(parexp, N,1); %time of first jump
@@ -267,7 +246,7 @@ for i=1:16
     clear slopesim
 end
 
-%Fig 5A: Phi(T) for individual 'bh', averaged over stable OTUs and over
+%Fig 4A: Phi(T) for individual 'bh', averaged over stable OTUs and over
 %non-stable OTUs
 i=7;
 
@@ -298,7 +277,7 @@ alpha(0.5)
 xlim([0 max(x1)])
 pbaspect([1.6 1 1])
 
-%Fig. S? 
+%Fig. S13 
 perc_stable=zeros(16,1);
 for i=1:16
    perc_stable(i)=sum(~id_slope{i,1})/length(id_slope{i,1})*100; 
@@ -318,7 +297,7 @@ pbaspect([1.6,1,1])
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Analysis for Fig. 5B: reproduction of emipirical correlations in time and
+%Analysis for Fig. 6B: reproduction of emipirical correlations in time and
 %across individuals with simulated time-series
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -421,9 +400,9 @@ corK=[corK; corr(log(x(ids))', log(y(ids))')];
 cors=[cors; corr(a(ids)', b(ids)')];
     
 
-%figure 5B
+%figure 4B
 J(:,:,2)=[ [corKt; nan(length(corK)-length(corKt),1)] corK [corst; nan(length(cors)-length(corst),1)] cors];
-load('corrData.mat')
+load('corrData.mat') %uploads empirical correlations computed in script 'Correlation_analysis.m'
 J(:,:,1)=[ [corKt; nan(length(corK)-length(corKt),1)] corK [corst; nan(length(cors)-length(corst),1)] cors];
 H=iosr.statistics.boxPlot(J)
 ylabel('Correlation')
@@ -435,7 +414,7 @@ ax.TickLabelInterpreter='tex';
 xticklabels({'K (time)', 'K (cross)','\sigma (time)','\sigma (cross)'})
 ylim([0 1])
 
-%Figura S?
+%Figura S14
 
 figure
 i=7;

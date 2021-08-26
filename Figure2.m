@@ -1,4 +1,4 @@
-%This script produces Fig. 2 and related Supplementary Figures
+%This script produces Fig. 2
 
 load('abd_all_clean.mat') %load empirical abundances
 %the variable 'abd' contains one array for each individual, in the
@@ -8,9 +8,9 @@ load('abd_all_clean.mat') %load empirical abundances
 %day, the following contain the counts for each OTU, the last columnn
 %contains the unassigned counts. 
 
-%Estimation of K and sigma 
-tresh_occup=0;  
-tresh_abd=10^(-4);
+%Estimation of K and sigma for each OTU of each individual
+tresh_occup=0;  % no threshold on occupancy
+tresh_abd=10^(-4); % threshold on average abundance
 
 for i=1:16
    counts{i,1}=sum(abd{i,1}(:,2:end),2);   %total reads
@@ -155,8 +155,11 @@ for i=1:16
     %find threshold slope
     threshold(i)=quantile(slopesim{i,1},0.95);
 end
-
 save('threshold_slope.mat')
+
+%***end long computation***
+
+
 
 
 %individuate OTUs with increasing Phi
@@ -182,10 +185,8 @@ err=nanstd(normPhi{i,1}(:,~id_slope{i,1})'); % compute standard deviation
 x = [x2', fliplr(x2')];
 inBetween = [mean2(x2)'+err(x2), fliplr(mean2(x2)'-err(x2))];
 fill(x, inBetween,[1 0.4 0.6],'EdgeColor','none'); % fill area of std
-
 plot(x1,mean1(x1),'-k', 'Linewidth',2) %Plot <Phi(T)> increasing
 plot(x2, mean2(x2),'-r', 'Linewidth',2) %Plot <Phi(T)> flat
-
 plot(1:size(normPhi{i,1},1), ones(size(normPhi{i,1},1),1), '--k')
 xlabel('\tau')
 ylabel('Average of normalised \Phi(\tau)')
@@ -215,11 +216,8 @@ for i=1:16
     x = [x2', fliplr(x2')];
     inBetween = [mean2(x2)'+err(x2), fliplr(mean2(x2)'-err(x2))];
     fill(x, inBetween,[1 0.4 0.6],'EdgeColor','none');
-    
     plot(x1,mean1(x1),'-k', 'Linewidth',2)
     plot(x2, mean2(x2),'-r', 'Linewidth',2)
-    
-   
     plot(1:size(normPhi{i,1},1), ones(size(normPhi{i,1},1),1), '--k')
     xlabel('\tau')
     ylabel('Average of normalised \Phi(\tau)')
